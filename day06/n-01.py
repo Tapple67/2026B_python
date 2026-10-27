@@ -8,8 +8,7 @@ print(np.__version__)
 x = np.array([1,2,3,4]) #1차원 배열
 print(x)
 
-x = np.array([[1,2,3], [4,5,6] ]
-              )
+x = np.array([[1,2,3], [4,5,6] ] )
 
 print(x)
 
