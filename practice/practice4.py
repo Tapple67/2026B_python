@@ -88,8 +88,9 @@ print(new_df['총매출'].sort_values(ascending=False))
 # - 머신러닝 모델 입력을 위해 명목형 범주 변수인 'Payment'와 'VIP_Flag'를 원-핫 인코딩(get_dummies)하세요.
 # - 단, 결과값이 True/False가 아닌 1과 0의 정수형(dtype=int)으로 생성되도록 옵션을 지정하세요.
 # ==============================================================================
-mew_df = pd.get_dummies(df, columns=['Payment'],dtype=int)
+mew_df = pd.get_dummies(df, columns=['Payment','VIP_Flag'],dtype=int)
 print(mew_df)
-mew_df = pd.get_dummies(df, columns=['VIP_Flag'],dtype=int)
-print(mew_df)
+
+# mew_df = pd.get_dummies(df, columns=['VIP_Flag'],dtype=int)
+# print(mew_df)
 
