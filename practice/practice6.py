@@ -46,29 +46,34 @@ plt.rc('font', family='Malgun Gothic')   # 윈도우 맑은 고딕으로 설정
 plt.rcParams['axes.unicode_minus'] = False  #음수 기호 깨짐 방지
 # [5. 데이터 시각화 및 분석]
 # 5-1 : 생존 분포 분석: 전체 생존자와 사망자의 비중을 파악할 수 있는 막대그래프 를 생성한다.
-# x = ['전체','생존자','사망자']
-# y = [len(df),len(df[df['Survived']==1]), len( df[df['Survived']==0]) ]
-# plt.bar(x,y,color = ['#222222', '#444444'])
 
-# plt.show()
+x = ['전체','생존자','사망자']
+y = [len(df),len(df[df['Survived']==1]), len( df[df['Survived']==0]) ]
+plt.bar(x,y,color = ['#222222', '#444444'])
+
+plt.show()
 
 
 # 5-2 : 연령대별 상세 분석:나이에 따른 생존/사망 분포를 히스토그램으로 시각화한다.데이터의 흐름을 파악할 수 있도록 커널 밀도 추정 곡선(KDE)을 포함한다.
 
-# sns.histplot(data=df, x='Age',hue="Survived", kde=True,multiple="dodge")
+sns.histplot(data=df, x='Age',hue="Survived", kde=True,multiple="dodge")
 
-# plt.show()
+plt.show()
 
 # 5-4 (성별): sns.countplot을 사용하여 성별(Sex)에 따른 생존 여부(Survived)별 인원수를 시각화한다.
-# sns.countplot(data=df,x='Sex', hue='Survived',palette="Set2")
-# plt.show()
+
+sns.countplot(data=df,x='Sex', hue='Survived',palette="Set2")
+plt.show()
+
 # # 5-5 (객실 등급): sns.countplot을 사용하여 객실 등급(Pclass)에 따른 생존 여부(Survived)별 인원수를 시각화한다.
-# sns.countplot(data=df,x='Pclass', hue='Survived',palette="Set2")
-# plt.show()
+
+sns.countplot(data=df,x='Pclass', hue='Survived',palette="Set2")
+plt.show()
 
 # # 5-6 (승선 항구): sns.countplot을 사용하여 승선 항구(Embarked)에 따른 생존 여부(Survived)별 인원수를 시각화한다.
-# sns.countplot(data=df,x='Embarked', hue='Survived',palette="Set2")
-# plt.show()
+
+sns.countplot(data=df,x='Embarked', hue='Survived',palette="Set2")
+plt.show()
 
 import pandas as pd
 import seaborn as sns
@@ -122,18 +127,19 @@ print(df['대여시간대'])
 # [5. 데이터 시각화 및 분석]
 # 5-1 (성별 분포): sns.countplot을 사용하여 성별에 따른 따릉이 이용 비중을 시각화한다.
 
-# sns.countplot(df,x='성별',hue='이용시간(분)' ,palette='Set2')
-# plt.show()
+sns.countplot(df,x='성별',hue='이용시간(분)' ,palette='Set2')
+plt.show()
+
+
 # 5-2 (시간대 분석): sns.barplot을 사용하여 24시간 중 어느 시간대에 대여가 집중되는지 분석한다.
-# sns.countplot(data=df, x="대여시간대", palette="coolwarm")
-# plt.show()
+sns.countplot(data=df, x="대여시간대", palette="coolwarm")
+plt.show()
 
 
 # 5-3 (인기 대여소): value_counts().head(10)를 활용하여 가장 활발한 상위 10개 대여소를 가로 막대 그래프로 시각화한다.
-# a = df['대여 대여소명'].value_counts().head(10)
-# sns.barplot(x=a.values, y=a.index, palette='Blues_r')
-# plt.show()
-
+a = df['대여 대여소명'].value_counts().head(10)
+sns.barplot(x=a.values, y=a.index, palette='Blues_r')
+plt.show()
 
 
 
