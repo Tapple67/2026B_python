@@ -51,12 +51,20 @@ x = ['전체','생존자','사망자']
 y = [len(df),len(df[df['Survived']==1]), len( df[df['Survived']==0]) ]
 plt.bar(x,y,color = ['#222222', '#444444'])
 
-plt.show()
+# sns.countplot(data=)
+# plt.xticks([0,1],['사망','생존'])
+# plt.show()
 
 
 # 5-2 : 연령대별 상세 분석:나이에 따른 생존/사망 분포를 히스토그램으로 시각화한다.데이터의 흐름을 파악할 수 있도록 커널 밀도 추정 곡선(KDE)을 포함한다.
 
-sns.histplot(data=df, x='Age',hue="Survived", kde=True,multiple="dodge")
+# sns.histplot(data=df, x='Age',hue="Survived", kde=True,multiple="dodge")
+
+사망자나이= df[df['Survived'] ==0]['Age']
+생존자나이= df[df['Survived'] ==1]['Age']
+sns.histplot(data=사망자나이,label='사망자',kde=True)
+sns.histplot(data=생존자나이,label='생존자',kde=True)
+plt.legend()
 
 plt.show()
 
@@ -102,6 +110,7 @@ data2 = pd.read_csv('./서울특별시 공공자전거 대여이력 정보_2502.
 df = pd.concat([data1,data2],axis=0, ignore_index=True)
 df.info()
 # 4-2 (정제): 결측치의 문자열 표현('\N')을 None으로 치환하고, 성별 데이터를 대문자로 통일 및 결측치를 'U'로 보정한다.
+
 df['성별'] = df['성별'].str.strip().replace(r'\N',None)
 df['성별'] = df['성별'].str.upper()
 df['성별'] = df['성별'].fillna('U')
@@ -110,11 +119,11 @@ print(df['성별'])
 
 # 4-3 (형변환): 이용시간, 거리 등 주요 수치형 변수는 pd.to_numeric으로 변환하고, 날짜 데이터는 pd.to_datetime으로 객체화한다.
 num = ['이용시간(분)','이용거리(M)']
-df[num] = df[num].apply(pd.to_numeric,errors='raise')
+df[num] = df[num].apply(pd.to_numeric,errors='coerce').fillna(0)
 print(df[num])
 
 date=['대여일시','반납일시']
-df[date] = df[date].apply(pd.to_datetime,errors='raise')
+df[date] = df[date].apply(pd.to_datetime,errors='coerce').fillna(0)
 print(df[date])
 
 
