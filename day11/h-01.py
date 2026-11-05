@@ -6,7 +6,7 @@
 import httpx
 import pandas as pd
 # 1] 공공데이터 포털 json 형식의 자료 요청
-service_key=
+service_key="asd"
 def test1(): 
     # https://api.odcloud.kr/api/15052602/v1/uddi:855807e2-fe8a-4e47-8a5a-ce1894e410d7_201909031553?page=1&perPage=10&serviceKey=
     # 2] 신청한 api의 주소 및 파라미터 분석, page 현재 페이지, perpage=페이지당 자료수, serviceKey
@@ -35,7 +35,7 @@ def test2():
     # https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyFullDown?serviceKey=&pageNo=1&numOfRows=10
     # 2] 신청한 api의 주소 및 파라미터 분석, page 현재 페이지, perpage=페이지당 자료수, serviceKey
     url = "https://apis.data.go.kr/B552657/ErmctInsttInfoInqireService/getParmacyFullDown"
-    url +="?serviceKey=
+    url +="?serviceKey=asd"
     url +="&pageNo=1&numOfRows=100"
     #2 ] httpx 이용한 api 요청
     response = httpx.get(url)
