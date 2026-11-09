@@ -61,6 +61,15 @@ print( 'r2 : ' , r2_score( Y_test , Y_pred ) ) # r2_score( 정답지 , 예측값
 # *] 모델 구현 에서 다양한 속성값( degree= N ) 들을 테스트 하여 설계/구현 한다.
 # *] 특성이 너무 많아지면 훈련 데이터가 과하게 집학하여 과대적합이 발생하여 점수가 낮아 진다.
 
+from sklearn.preprocessing import StandardScaler
+ss = StandardScaler() # 객체 생성 
+ss.fit( X_train_poly ) # 항이 추가된 특성 으로 표준화 
+X_train_scaled = ss.transform( X_train_poly )
+X_test_scaled = ss.transform( X_test_poly )
+print( X_train_poly[0] )    # [ 16.2          4.5924       ~~ ]
+print( X_train_scaled[0] )  # [-1.14878727 -1.06273398  ~~ ] 
+# 평균보다 작으면 음수 , 평균+1편준보다 크면 1이상 
+
 
 #5] 규제: 기울기(가중치) 크기에 페널티를 부여 하여 특성 오차/손실 확인하여 특성 제외
 # 1) 릿지
@@ -73,5 +82,20 @@ for alpha in alpha_list:
     model.fit(X_train_scaled, Y_train) # 학습
     # 학습데이터 점수와 테스트용 점수 격차 적은 alpha 찾기
     print("---------------룬련용 학습 데이터 점수 vs 테스트용 학습 데이터 점수 ---")
-    print("Train R2:".model.score(X_train_scaled, Y_train))
-    print("Test R2:".model.score(X_test_scaled, Y_test))
+    print( "Train R2: " , model.score( X_train_scaled , Y_train ) )
+    print( "Test R2: " , model.score( X_test_scaled , Y_test ) ) 
+
+#6]라쏘 모델
+from sklearn.linear_model import Lasso
+lasso = Lasso(alpha=10) 
+lasso.fit(X_train_scaled, Y_train)
+print(lasso.score(X_train_scaled, Y_train))
+print(lasso.score(X_test_scaled, Y_test))
+# 제거된 특성
+import numpy as np 
+zero_features = np.sum(lasso.coef_ == 0)
+print('기울기 0 으로 제거된 특성 수 :', zero_features)
+
+# 다항에서 StandardScaler() 표준화 필수
+#특성이 적으면 (과소 적합/ 모델 단순) --> 항 추가(PolynimialFeatures)
+# 특성이 많으면 (과대적합/모델 복잡) --> 규제(L1라쏘, L2릿지) / alpha
