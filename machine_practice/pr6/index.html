@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자전거 대여량 예측</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #fffdf8;
+    --ink: #1f2a24;
+    --muted: #6b746e;
+    --line: #e2ddd2;
+    --accent: #00873f;
+    --accent-soft: #e3f1e8;
+    --warn: #c2410c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 16px;
+    font-family: "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+  }
+  .wrap {
+    max-width: 1040px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 300px; gap: 20px; align-items: start;
+  }
+  @media (max-width: 860px) { .wrap { grid-template-columns: 1fr; } }
+
+  /* 헤더: 초록 바탕 + 자전거 아이콘 */
+  header {
+    grid-column: 1 / -1; position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 18px;
+    padding: 22px 26px; border-radius: 16px;
+    background: linear-gradient(135deg, #00a650 0%, #00873f 100%);
+    color: #fff;
+  }
+  header .logo {
+    flex: none; width: 64px; height: 64px; border-radius: 50%;
+    background: #fff; display: grid; place-items: center;
+  }
+  header .logo svg { width: 42px; height: 42px; }
+  header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  header p { margin: 4px 0 0; font-size: 14px; opacity: .9; }
+  /* 오른쪽 장식용 바퀴 */
+  header .wheel {
+    position: absolute; right: -30px; top: 50%; transform: translateY(-50%);
+    width: 160px; height: 160px; border-radius: 50%;
+    border: 14px solid rgba(255,255,255,.15);
+  }
+  header .wheel::after {
+    content: ""; position: absolute; inset: 40px; border-radius: 50%;
+    border: 8px solid rgba(255,255,255,.15);
+  }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 20px;
+  }
+
+  /* 입력 그룹 */
+  fieldset { border: none; padding: 0; margin: 0 0 22px; }
+  legend {
+    font-size: 12px; font-weight: bold; letter-spacing: 1px;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .field {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff;
+    transition: border-color .15s;
+  }
+  .field:focus-within { border-color: var(--accent); }
+  .field .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .field .name { font-size: 14px; font-weight: bold; }
+  .field .unit { font-size: 11px; color: var(--muted); background: var(--bg); padding: 2px 6px; border-radius: 4px; }
+  input, select {
+    width: 100%; padding: 7px 0; font-size: 16px; font-family: inherit; color: var(--ink);
+    border: none; border-bottom: 1px dashed var(--line); background: transparent;
+  }
+  input:focus, select:focus { outline: none; border-bottom-color: var(--accent); }
+
+  .buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    padding: 11px 18px; font-size: 14px; font-family: inherit; font-weight: bold;
+    border-radius: 999px; cursor: pointer; border: 1px solid var(--accent);
+  }
+  .primary { background: var(--accent); color: #fff; }
+  .ghost { background: transparent; color: var(--accent); }
+  button:hover { filter: brightness(.95); }
+  button:active { transform: translateY(1px); }
+
+  /* 결과 패널 */
+  aside { position: sticky; top: 20px; display: flex; flex-direction: column; gap: 20px; }
+  .result { text-align: center; background: var(--accent); color: #fff; border: none; }
+  .result .label { font-size: 13px; opacity: .85; }
+  .result .num { font-size: 48px; font-weight: bold; margin: 6px 0 2px; letter-spacing: -1px; }
+  .result .sub { font-size: 12px; opacity: .8; }
+  .result .error-box {
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.3);
+  }
+  .result .range { font-size: 15px; font-weight: bold; }
+  .result .metrics { font-size: 12px; opacity: .8; margin-top: 4px; }
+  .result .err {
+    margin-top: 12px; padding: 10px; border-radius: 8px; background: #fff; color: var(--warn);
+    font-size: 12px; text-align: left; white-space: pre-wrap; word-break: break-all;
+  }
+  .result .err:empty { display: none; }
+
+  .history h2 { font-size: 14px; margin: 0 0 10px; }
+  .history ul { list-style: none; margin: 0; padding: 0; }
+  .history li {
+    display: flex; justify-content: space-between; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px;
+  }
+  .history li:last-child { border-bottom: none; }
+  .history .meta { color: var(--muted); }
+  .history .cnt { font-weight: bold; color: var(--accent); white-space: nowrap; }
+  .history .empty { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 48 48" fill="none" stroke="#00a650" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="31" r="8"/>
+        <circle cx="36" cy="31" r="8"/>
+        <path d="M12 31 L20 17 L30 17 L36 31 M20 17 L25 31 L30 17 M17 12 H23 M30 17 L28 11 H33"/>
+      </svg>
+    </div>
+    <div>
+      <h1>서울 자전거 대여량 예측</h1>
+      <p>시간과 날씨 조건으로 1시간 동안의 대여량을 예측합니다.</p>
+    </div>
+    <div class="wheel"></div>
+  </header>
+
+  <main class="card">
+    <form id="form">
+      <fieldset>
+        <legend>언제</legend>
+        <div class="grid">
+          <label class="field">
+            <div class="top"><span class="name">시간</span><span class="unit">Hour</span></div>
+            <select name="Hour" id="Hour"></select>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">요일</span><span class="unit">dayofweek</span></div>
+            <select name="dayofweek">
+              <option value="0">월요일</option><option value="1">화요일</option><option value="2">수요일</option>
+              <option value="3">목요일</option><option value="4">금요일</option><option value="5">토요일</option>
+              <option value="6">일요일</option>
+            </select>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">계절</span><span class="unit">Seasons</span></div>
+            <select name="Seasons">
+              <option value="Spring">봄</option><option value="Summer">여름</option>
+              <option value="Autumn">가을</option><option value="Winter">겨울</option>
+            </select>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">공휴일</span><span class="unit">Holiday</span></div>
+            <select name="Holiday">
+              <option value="No Holiday">평일 (공휴일 아님)</option>
+              <option value="Holiday">공휴일</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>기온 · 바람</legend>
+        <div class="grid">
+          <label class="field">
+            <div class="top"><span class="name">기온</span><span class="unit">°C</span></div>
+            <input type="number" step="0.1" name="Temperature" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">습도</span><span class="unit">%</span></div>
+            <input type="number" step="1" min="0" max="100" name="Humidity" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">이슬점</span><span class="unit">°C</span></div>
+            <input type="number" step="0.1" name="Dew_point_temperature" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">풍속</span><span class="unit">m/s</span></div>
+            <input type="number" step="0.1" min="0" name="Wind_speed" required>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>하늘 · 강수</legend>
+        <div class="grid">
+          <label class="field">
+            <div class="top"><span class="name">가시거리</span><span class="unit">10m</span></div>
+            <input type="number" step="1" min="0" max="2000" name="Visibility" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">일사량</span><span class="unit">MJ/m²</span></div>
+            <input type="number" step="0.01" min="0" name="Solar_Radiation" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">강수량</span><span class="unit">mm</span></div>
+            <input type="number" step="0.1" min="0" name="Rainfall" required>
+          </label>
+          <label class="field">
+            <div class="top"><span class="name">적설량</span><span class="unit">cm</span></div>
+            <input type="number" step="0.1" min="0" name="Snowfall" required>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="buttons">
+        <button type="submit" class="primary">예측하기</button>
+        <button type="button" class="ghost" id="randomBtn">🎲 랜덤 값 채우기</button>
+        <button type="button" class="ghost" id="randomPredictBtn">🎲 랜덤 + 예측</button>
+      </div>
+    </form>
+  </main>
+
+  <aside>
+    <div class="card result">
+      <div class="label">예측 대여량</div>
+      <div class="num" id="resultNum">-</div>
+      <div class="sub">해당 시간 1시간 동안</div>
+      <div class="error-box" id="errorBox" hidden>
+        <div class="range" id="resultRange"></div>
+        <div class="metrics" id="resultMetrics"></div>
+      </div>
+      <div class="err" id="resultErr"></div>
+    </div>
+
+    <div class="card history">
+      <h2>최근 예측 기록</h2>
+      <ul id="history"><li class="empty">아직 기록이 없습니다.</li></ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // FastAPI 주소 (Live Server 등 다른 포트에서 열어도 항상 FastAPI(8001)로 요청)
+  const API_URL = "http://127.0.0.1:8001/predict";
+
+  const form = document.getElementById("form");
+  const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+  const SEASON_KO = { Spring: "봄", Summer: "여름", Autumn: "가을", Winter: "겨울" };
+
+  // 시간 옵션 0~23
+  const hourSel = document.getElementById("Hour");
+  for (let h = 0; h < 24; h++) hourSel.add(new Option(`${h}시`, h));
+
+  // ---------- 랜덤 값 생성 ----------
+  const rand = (min, max) => Math.random() * (max - min) + min;
+  const randInt = (min, max) => Math.floor(rand(min, max + 1));
+  const pick = arr => arr[randInt(0, arr.length - 1)];
+  const round = (v, d = 1) => Number(v.toFixed(d));
+
+  // 계절별로 현실적인 범위에서 값 생성
+  const SEASON_TEMP = {
+    Spring: [5, 22], Summer: [20, 35], Autumn: [5, 25], Winter: [-15, 8],
+  };
+
+  function randomInput() {
+    const season = pick(["Spring", "Summer", "Autumn", "Winter"]);
+    const hour = randInt(0, 23);
+    const temp = rand(...SEASON_TEMP[season]);
+    const humidity = randInt(20, 98);
+    // 이슬점은 기온보다 낮게 (습도가 높을수록 기온에 가까움)
+    const dew = temp - (100 - humidity) / 5 - rand(0, 2);
+
+    // 일사량: 낮 시간에만
+    const isDay = hour >= 7 && hour <= 18;
+    const solar = isDay ? rand(0, season === "Summer" ? 3.0 : 2.0) : 0;
+
+    // 30% 확률로 강수 발생, 영하면 눈
+    const precip = Math.random() < 0.3;
+    const rainfall = precip && temp > 0 ? rand(0.1, 15) : 0;
+    const snowfall = precip && temp <= 0 ? rand(0.1, 5) : 0;
+
+    return {
+      Hour: hour,
+      dayofweek: randInt(0, 6),
+      Seasons: season,
+      Holiday: Math.random() < 0.1 ? "Holiday" : "No Holiday",
+      Temperature: round(temp),
+      Humidity: humidity,
+      Wind_speed: round(rand(0, 5)),
+      Visibility: precip ? randInt(200, 1200) : randInt(1000, 2000),
+      Dew_point_temperature: round(dew),
+      Solar_Radiation: round(solar, 2),
+      Rainfall: round(rainfall),
+      Snowfall: round(snowfall),
+    };
+  }
+
+  function fillForm(data) {
+    for (const [k, v] of Object.entries(data)) form.elements[k].value = v;
+  }
+
+  // ---------- 폼 → JSON ----------
+  const INT_FIELDS = ["Hour", "dayofweek"];
+  const STR_FIELDS = ["Seasons", "Holiday"];
+
+  function readForm() {
+    const data = {};
+    for (const [k, v] of new FormData(form)) {
+      if (STR_FIELDS.includes(k)) data[k] = v;
+      else if (INT_FIELDS.includes(k)) data[k] = parseInt(v, 10);
+      else data[k] = parseFloat(v);
+    }
+    return data;
+  }
+
+  // ---------- 예측 요청 ----------
+  const resultNum = document.getElementById("resultNum");
+  const resultErr = document.getElementById("resultErr");
+  const errorBox = document.getElementById("errorBox");
+  const resultRange = document.getElementById("resultRange");
+  const resultMetrics = document.getElementById("resultMetrics");
+
+  async function predict() {
+    const data = readForm();
+    resultNum.textContent = "...";
+    resultErr.textContent = "";
+    errorBox.hidden = true;
+    try {
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      // 응답이 비어 있거나 JSON 이 아닐 때도 원인을 보여주기 위해 text 로 먼저 받음
+      const text = await res.text();
+      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText} (${API_URL})\n${text}`);
+      const json = JSON.parse(text);
+      resultNum.textContent = `${json.predicted_count.toLocaleString()}대`;
+      // 예측 오차: ± MAE 범위
+      resultRange.textContent = `${json.lower.toLocaleString()} ~ ${json.upper.toLocaleString()}대`;
+      resultMetrics.textContent = `오차 ± ${Math.round(json.mae)}대 (MAE) · RMSE ${Math.round(json.rmse)}`;
+      errorBox.hidden = false;
+      addHistory(data, json.predicted_count);
+    } catch (e) {
+      resultNum.textContent = "오류";
+      resultErr.textContent = e.message;
+    }
+  }
+
+  function addHistory(d, count) {
+    const list = document.getElementById("history");
+    list.querySelector(".empty")?.remove();
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="meta">${SEASON_KO[d.Seasons]} · ${DAYS[d.dayofweek]} ${d.Hour}시 · ${d.Temperature}°C${d.Rainfall ? " · 비" : ""}${d.Snowfall ? " · 눈" : ""}</span>
+      <span class="cnt">${count.toLocaleString()}대</span>`;
+    list.prepend(li);
+    while (list.children.length > 8) list.lastChild.remove();
+  }
+
+  // ---------- 이벤트 ----------
+  form.addEventListener("submit", e => { e.preventDefault(); predict(); });
+  document.getElementById("randomBtn").addEventListener("click", () => fillForm(randomInput()));
+  document.getElementById("randomPredictBtn").addEventListener("click", () => {
+    fillForm(randomInput());
+    predict();
+  });
+
+  // 처음 열 때 랜덤 값 자동 입력
+  fillForm(randomInput());
+</script>
+</body>
+</html>
