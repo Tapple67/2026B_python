@@ -29,7 +29,7 @@ df = df.sample(n=5000, random_state=42).reset_index(drop=True)
 # 3. 다이아몬드 커팅 품질('cut': Fair, Good, Very Good, Premium, Ideal)을 종속 변수 Y로, 나머지 컬럼을 독립 변수 X로 분리하세요.
 #
 
-X = df.drop['cut']
+X = df.drop(columns='cut')
 Y = df['cut']
 
 # [단계 2] 훈련용 / 테스트용 데이터 분리
@@ -71,7 +71,7 @@ pipe.fit(X_train, Y_train)
 # [단계 5] 모델 다중 분류 지표 산출 및 혼동 행렬 시각화
 # 1. 테스트 세트(X_test)에 대한 예측 레이블(Y_pred) 및 예측 확률(Y_pred_proba)을 생성하세요.
 Y_pred = pipe.predict(X_test)
-Y_pred_proba = pipe.predict_proba(Y_pred)
+Y_pred_proba = pipe.predict_proba(X_test)
 print('정답지', pipe.classes_)
 
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score    
@@ -112,7 +112,7 @@ cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 # 3. scoring='f1_macro'를 기준으로 GridSearchCV를 수행하여 최적 파라미터와 최고 점수를 출력하세요.
 grid = GridSearchCV(pipe, param_grid, cv=cv, scoring="f1_macro", n_jobs=-1)
-
+grid.fit(X_train, Y_train)
 # 4. 최적 추정기(best_estimator_)로 X_test를 평가하고 classification_report를 출력하세요.
 #
 best_model = grid.best_estimator_ 
@@ -125,18 +125,56 @@ print(classification_report(Y_test,Y_pred)) # 파이프라인으로 최적의
 import joblib
 
 # 1. joblib.dump를 사용하여 최적화된 파이프라인 전체를 './diamond_pipeline.pkl'로 저장하세요.
-joblib.dump(pipe,'./diamond_pipeline.pkl')
+# joblib.dump(pipe,'./diamond_pipeline.pkl')
 
 # 2. joblib.load로 저장된 파이프라인을 다시 불러오세요.
-pipe_load= joblib.load('./day14/fish_model.pkl')
+pipe_load = joblib.load('./diamond_pipeline.pkl')
 
 # 3. 스케일링/인코딩을 거치지 않은 원본 형태의 임의 다이아몬드 샘플(DataFrame)을 생성하세요: (예: carat=0.7, color='E', clarity='SI1', depth=61.5, table=55.0, price=3000, x=5.7, y=5.75, z=3.5)
 import pandas as pd
-sample = pd.DataFrame(carat=0.7, color='E', clarity='SI1', depth=61.5, table=55.0, price=3000, x=5.7, y=5.75, z=3.5)
-
+sample = pd.DataFrame([{
+    'carat': 0.7, 'color': 'E', 'clarity': 'SI1',
+    'depth': 61.5, 'table': 55.0, 'price': 3000,
+    'x': 5.7, 'y': 5.75, 'z': 3.5
+}])
 
 # 4. 불러온 파이프라인의 predict() 및 predict_proba()에 직접 전달하여 예측 커팅 등급(cut)과 가장 높은 확신도(최대 확률 %)를 출력하세요.
 
 predict = pipe_load.predict( sample )
-print('예측값:', predict)
+proba = pipe_load.predict_proba(sample)
 
+print(f"예측 커팅 등급: {predict[0]}")
+print(f"가장 높은 확신도: {proba.max() * 100:.2f}%")
+
+
+# 정답지 ['Fair' 'Good' 'Ideal' 'Premium' 'Very Good']
+# 0.629
+# 0.539373340028565
+# 0.5110946068271173
+# 0.5031768189980677
+#               precision    recall  f1-score   support
+
+#         Fair       0.62      0.56      0.59        32
+#         Good       0.29      0.04      0.07        93
+#        Ideal       0.71      0.86      0.77       391
+#      Premium       0.62      0.73      0.67       262
+#    Very Good       0.47      0.36      0.41       222
+
+#     accuracy                           0.63      1000
+#    macro avg       0.54      0.51      0.50      1000
+# weighted avg       0.59      0.63      0.59      1000
+
+#               precision    recall  f1-score   support
+
+#         Fair       0.68      0.59      0.63        32
+#         Good       0.47      0.09      0.15        93
+#        Ideal       0.72      0.85      0.78       391
+#      Premium       0.63      0.71      0.67       262
+#    Very Good       0.50      0.45      0.47       222
+
+#     accuracy                           0.65      1000
+#    macro avg       0.60      0.54      0.54      1000
+# weighted avg       0.62      0.65      0.62      1000
+
+# 예측 커팅 등급: Ideal
+# 가장 높은 확신도: 80.48%
