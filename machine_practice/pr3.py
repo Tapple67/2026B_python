@@ -65,7 +65,7 @@ print('r2: ', best_model.score(X_test,Y_test))
 # - 최적 파이프라인 모델(best_estimator_)을 joblib.dump()를 사용하여 './best_student_performance_pipe.pkl' 파일로 저장하세요.
 # - 저장된 피클 파일을 joblib.load()로 다시 불러와 새로운 파이프라인 객체(loaded_model)로 복원하세요.
 import joblib
-model = joblib.dump(best_model,'./best_student_performance_pipe.pkl')
+# model = joblib.dump(best_model,'./best_student_performance_pipe.pkl')
 
 model = joblib.load('./best_student_performance_pipe.pkl')
 
